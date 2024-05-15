@@ -82,7 +82,7 @@ class Model:
     # Create a course.
     def createCourse(self, name, idProfessor):
         self.cursor.execute("""
-        INSERT INTO Course VALUES (%s,%s)
+        INSERT INTO Courses VALUES (%s,%s)
         """, (name, idProfessor))
         self.connection.commit()
 
@@ -99,7 +99,7 @@ class Model:
     # curriculum, and have grades that should also be deleted).
     def deleteCourse(self, idCourse):
         self.cursor.execute("""
-        DELETE FROM Course
+        DELETE FROM Courses
         WHERE id=%s
         """, idCourse)
         self.connection.commit()
