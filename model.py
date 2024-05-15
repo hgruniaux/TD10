@@ -164,7 +164,8 @@ class Model:
     # Get the name of a given course.
     def getNameOfCourse(self, id):
         self.cursor.execute("""
-        TODO16
+        SELECT name FROM Courses
+        WHERE id = %s
         """, id)
         # suppose that there is a solution
         return self.cursor.fetchall()[0][0]
