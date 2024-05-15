@@ -82,7 +82,7 @@ class Model:
     # Create a course.
     def createCourse(self, name, idProfessor):
         self.cursor.execute("""
-        INSERT INTO Courses VALUES (%s,%s)
+        INSERT INTO Courses (name, teacher) VALUES (%s,%s)
         """, (name, idProfessor))
         self.connection.commit()
 
@@ -91,7 +91,8 @@ class Model:
     # to all the courses.
     def listCourses(self):
         self.cursor.execute("""
-        SELECT * FROM Courses
+        SELECT C.id, C.name, T.id, T.lastname, T.firstname FROM Courses as C
+        JOIN Persons as T ON C.teacher = T.id
         """)
         return self.cursor.fetchall()
 
@@ -123,8 +124,12 @@ class Model:
     # registered to a given curriculum.
     def listCoursesOfCurriculum(self, idCurriculum):
         self.cursor.execute("""
-        SELECT Courses.id, Courses.name, Persons.lastname, Persons.firsname, Courses.ects
-        FROM Courses JOIN Persons ON Courses.teach = Persons.id
+        SELECT Courses.id, Courses.name, Persons.lastname, Persons.firstname, CourseCurriculum.ects
+        FROM Courses
+        JOIN Curriculums
+        JOIN Persons ON Persons.id = Courses.teacher
+        JOIN CourseCurriculum
+        ON CourseCurriculum.course = Courses.id AND CourseCurriculum.curriculum = Curriculums.id
         """, (idCurriculum))
         return self.cursor.fetchall()
 
@@ -143,21 +148,22 @@ class Model:
     # Register a person to a curriculum.
     def registerPersonToCurriculum(self, idPerson, idCurriculum):
         self.cursor.execute("""
-        TODO13
+        INSERT INTO CurriculumPerson VALUES (%s, %s)
         """, (idPerson, idCurriculum))
         self.connection.commit()
 
     # Register a course to a curriculum.
     def registerCourseToCurriculum(self, idCourse, idCurriculum, ects):
         self.cursor.execute("""
-        TODO14
+        INSERT INTO CourseCurriculum VALUES (%s, %s, %s)
         """, (idCourse, idCurriculum, ects))
         self.connection.commit()
 
     # Unregister a course to a curriculum.
     def deleteCourseFromCurriculum(self, idCourse, idCurriculum):
         self.cursor.execute("""
-        TODO15
+        DELETE FROM CourseCurriculum
+        WHERE curriculum = %s AND course = %s
         """, (idCurriculum, idCourse))
         self.connection.commit()
 
@@ -178,7 +184,10 @@ class Model:
     # which a given course is registered.
     def listCurriculumsOfCourse(self, idCourse):
         self.cursor.execute("""
-        TODO17
+        SELECT Curriculums.id, Curriculums.name, CourseCurriculum.ects
+        FROM CourseCurriculum
+        JOIN Curriculums ON Curriculums.id = CourseCurriculum.curriculum
+        WHERE course = %s
         """, (idCourse))
         return self.cursor.fetchall()
 
@@ -186,7 +195,8 @@ class Model:
     # assiociated to a given course.
     def listValidationsOfCourse(self, idCourse):
         self.cursor.execute("""
-        TODO18
+        SELECT id, date, name, coefficient
+        FROM Validations
         """, idCourse)
         return self.cursor.fetchall()
 
@@ -194,7 +204,11 @@ class Model:
     # registered in a curriculum with the given course
     def listStudentsOfCourse(self, idCourse):
         self.cursor.execute("""
-        TODO19
+        SELECT Persons.id, Persons.lastname, Persons.firstname
+        FROM Persons
+        JOIN CurriculumPerson on CurriculumPerson.student = Persons.id
+        JOIN CourseCurriculum ON CourseCurriculum.curriculum = CurriculumPerson.curriculum
+        WHERE CourseCurriculum.course = %s
         """, idCourse)
         return self.cursor.fetchall()
 
@@ -204,21 +218,27 @@ class Model:
     # sorted by decreasing date of validation.
     def listGradesOfCourse(self, idCourse):
         self.cursor.execute("""
-        TODO20
+        SELECT Validations.id, Validations.date, Curriculums.name, Persons.lastname, Persons.firstname, Validations.name, Grades.grade, Validations.coefficient
+        FROM Validations
+        JOIN Courses ON Validations.course = Courses.id
+        JOIN Grades ON Grades.validation = Validations.id
+        JOIN Persons ON Persons.id = Grades.student
+        JOIN CurriculumPerson ON CurriculumPerson.student = Grades.student
+        JOIN Curriculums ON Curriculums.id = CurriculumPerson.curriculum
         """, idCourse)
         return self.cursor.fetchall()
 
     # Add a validation to a given course.
     def addValidationToCourse(self, name, coef, date, idCourse):
         self.cursor.execute("""
-        TODO21
+        INSERT INTO Validations (name, coefficient, date, course) VALUES (%s, %s, %s, %s)
         """, (name, coef, date, idCourse))
         self.connection.commit()
 
     # Add a grade to a student.
     def addGrade(self, idValidation, idStudent, grade):
         self.cursor.execute("""
-        TODO22
+        INSERT INTO Grades (validation, student, grade) VALUES (%s, %s, %s)
         """, (idValidation, idStudent, grade))
         self.connection.commit()
 
