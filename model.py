@@ -108,7 +108,8 @@ class Model:
     # Get the name of a given curriculum.
     def getNameOfCurriculum(self, id):
         self.cursor.execute("""
-        TODO10
+        SELECT name FROM Curriculums
+        WHERE id = %s
         """, id)
         # suppose that there is a solution
         return self.cursor.fetchall()[0][0]
