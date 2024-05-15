@@ -287,10 +287,13 @@ class Model:
     # by decreasing date of validation.
     def listValidationsOfStudent(self, idStudent):
         self.cursor.execute("""
-        SELECT Validations.id, Validations.date, Curriculum.name, Course.name, Validations.name, Grades.grade
+        SELECT Validations.id, Validations.date, Curriculums.name, Courses.name, Validations.name, Grades.grade
         FROM Persons
-        JOIN Grades ON Grades.id = Persons.student
+        JOIN Grades ON Grades.student = Persons.id
         JOIN Validations ON Validations.id = Grades.validation
+        JOIN CourseCurriculum ON CourseCurriculum.course = Validations.course
+        JOIN Curriculums ON CourseCurriculum.curriculum = Curriculums.id
+        JOIN Courses ON Courses.id = Validations.course
         """, idStudent)
         return self.cursor.fetchall()
 
