@@ -7,6 +7,11 @@ from sqlite3 import IntegrityError
 app = Flask(__name__)
 
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 @app.route('/')
 def index():
     return render_template('index.html')

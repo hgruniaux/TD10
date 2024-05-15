@@ -3,11 +3,11 @@
 import sys
 import psycopg2
 import psycopg2.extras
-
+import os
 
 class Model:
     def __init__(self):
-        self.connection = psycopg2.connect("dbname='TODO' user='TODO' host='psql.eleves.ens.fr' password='TODO'")
+        self.connection = psycopg2.connect(f"dbname='{os.getenv('DB_NAME')}' user='{os.getenv('DB_USER')}' host='psql.eleves.ens.fr' password='{os.getenv('DB_PASSWD')}'")
         self.connection.autocommit = True
         self.cursor = self.connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
