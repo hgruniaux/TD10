@@ -1,4 +1,4 @@
 python-dotenv
-python3-psycopg2
+psycopg2
 wtforms
 flask
