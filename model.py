@@ -68,7 +68,8 @@ class Model:
     # Delete a curriculum given its ID (beware of the foreign constraints!).
     def deleteCurriculum(self, idCurriculum):
         self.cursor.execute("""
-        TODO06
+        DELETE FROM Curriculums
+        WHERE id=%s
         """, idCurriculum)
         self.connection.commit()
 
