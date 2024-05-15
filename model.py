@@ -98,7 +98,7 @@ class Model:
     def deleteCourse(self, idCourse):
         self.cursor.execute("""
         DELETE FROM Course
-        WHERE id=%s
+        WHERE id=%d
         """, idCourse)
         self.connection.commit()
 
