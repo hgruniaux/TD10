@@ -252,7 +252,10 @@ class Model:
    # a given validation.
     def listGradesOfValidation(self, idValidation):
         self.cursor.execute("""
-        TODO23
+        SELECT Grades.grade, Persons.lastname, Persons.firstname
+        FROM Grades
+        JOIN Persons ON Grades.student = Persons.id
+        WHERE Grades.validation = %s
         """, idValidation)
         return self.cursor.fetchall()
 
@@ -262,7 +265,7 @@ class Model:
     # course.
     def getNameOfValidation(self, id):
         self.cursor.execute("""
-        TODO24
+        SELECT name FROM Validations WHERE id = %s
         """, id)
         # suppose that there is a solution
         return self.cursor.fetchall()[0][0]
@@ -274,7 +277,7 @@ class Model:
     # Get the name of a person given its ID.
     def getNameOfPerson(self, id):
         self.cursor.execute("""
-        TODO25
+        SELECT name FROM Persons WHERE id = %s
         """, id)
         # suppose that there is a solution
         return self.cursor.fetchall()[0][0]
@@ -284,7 +287,10 @@ class Model:
     # by decreasing date of validation.
     def listValidationsOfStudent(self, idStudent):
         self.cursor.execute("""
-        TODO26
+        SELECT Validations.id, Validations.date, Curriculum.name, Course.name, Validations.name, Grades.grade
+        FROM Persons
+        JOIN Grades ON Grades.id = Persons.student
+        JOIN Validations ON Validations.id = Grades.validation
         """, idStudent)
         return self.cursor.fetchall()
 
