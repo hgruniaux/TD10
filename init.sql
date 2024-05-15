@@ -6,8 +6,8 @@ DROP TABLE IF EXISTS Grades;
 CREATE TABLE Persons
 (
     id SERIAL PRIMARY KEY NOT NULL,
-    firstname VARCHAR NOT NULL,
     lastname VARCHAR NOT NULL,
+    firstname VARCHAR NOT NULL,
     address VARCHAR NOT NULL,
     phone VARCHAR NOT NULL
 );

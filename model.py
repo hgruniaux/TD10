@@ -25,7 +25,7 @@ class Model:
     # Create a new person.
     def createPerson(self, lastname, firstname, address, phone):
         self.cursor.execute("""
-        INSERT INTO
+        INSERT INTO Persons (lastname, firstname, address, phone) VALUES (%s, %s, %s, %s)
         """, (lastname, firstname, address, phone))
         self.connection.commit()
 
@@ -33,14 +33,15 @@ class Model:
     # number of curriculums) corresponding to all persons.
     def listPersons(self):
         self.cursor.execute("""
-        TODO02
+        SELECT * FROM Persons
         """)
         return self.cursor.fetchall()
 
     # Delete a person given its ID (beware of the foreign constraints!).
     def deletePerson(self, idPerson):
         self.cursor.execute("""
-        TODO03
+        DELETE FROM Persons
+        WHERE id=%s
         """, idPerson)
         self.connection.commit()
 
