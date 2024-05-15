@@ -25,7 +25,8 @@ CREATE TABLE Courses
 (
     id SERIAL PRIMARY KEY NOT NULL,
     name VARCHAR NOT NULL,
-    teacher SERIAL NOT NULL REFERENCES Persons(id)
+    teacher SERIAL NOT NULL REFERENCES Persons(id),
+    ects INT NOT NULL
 );
 
 CREATE TABLE Validations
