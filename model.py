@@ -52,7 +52,7 @@ class Model:
     # Create a curriculum.
     def createCurriculum(self, name, secretary, director):
         self.cursor.execute("""
-        INSERT INTO Curriculums VALUES (%s,%s,%s)
+        INSERT INTO Curriculums (name, secretary, director) VALUES (%s,%s,%s)
         """, (name, secretary, director))
         self.connection.commit()
 
@@ -61,7 +61,9 @@ class Model:
     # corresponding to all curriculums.
     def listCurriculums(self):
         self.cursor.execute("""
-        SELECT * FROM Curriculums
+        SELECT C.id, C.name, Dir.lastname, Dir.firstname, Sec.lastname, Sec.firstname FROM Curriculums as C
+        JOIN Persons AS Sec ON Sec.id = C.secretary
+        JOIN Persons AS Dir ON Dir.id = C.director
         """)
         return self.cursor.fetchall()
 
@@ -120,7 +122,8 @@ class Model:
     # registered to a given curriculum.
     def listCoursesOfCurriculum(self, idCurriculum):
         self.cursor.execute("""
-        TODO11
+        SELECT Courses.id, Courses.name, Persons.lastname, Persons.firsname, Courses.ects
+        FROM Courses JOIN Persons ON Courses.teach = Persons.id
         """, (idCurriculum))
         return self.cursor.fetchall()
 
