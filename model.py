@@ -52,7 +52,7 @@ class Model:
     # Create a curriculum.
     def createCurriculum(self, name, secretary, director):
         self.cursor.execute("""
-        TODO04
+        INSERT INTO Curriculums VALUES (%s,%s,%s)
         """, (name, secretary, director))
         self.connection.commit()
 
@@ -61,14 +61,15 @@ class Model:
     # corresponding to all curriculums.
     def listCurriculums(self):
         self.cursor.execute("""
-        TODO05
+        SELECT * FROM Curriculums
         """)
         return self.cursor.fetchall()
 
     # Delete a curriculum given its ID (beware of the foreign constraints!).
     def deleteCurriculum(self, idCurriculum):
         self.cursor.execute("""
-        TODO06
+        DELETE FROM Curriculums
+        WHERE id=%s
         """, idCurriculum)
         self.connection.commit()
 
