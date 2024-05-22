@@ -25,8 +25,8 @@ CREATE TABLE Curriculums
 
 CREATE TABLE CurriculumPerson
 (
-    student SERIAL NOT NULL REFERENCES Persons(id),
-    curriculum SERIAL NOT NULL REFERENCES Curriculums(id),
+    student SERIAL NOT NULL REFERENCES Persons(id) ON DELETE CASCADE,
+    curriculum SERIAL NOT NULL REFERENCES Curriculums(id) ON DELETE CASCADE,
     PRIMARY KEY (student, curriculum)
 );
 
@@ -39,8 +39,8 @@ CREATE TABLE Courses
 
 CREATE TABLE CourseCurriculum
 (
-    course SERIAL NOT NULL REFERENCES Courses(id),
-    curriculum SERIAL NOT NULL REFERENCES Curriculums(id),
+    course SERIAL NOT NULL REFERENCES Courses(id) ON DELETE CASCADE,
+    curriculum SERIAL NOT NULL REFERENCES Curriculums(id) ON DELETE CASCADE,
     ects INT NOT NULL,
     PRIMARY KEY (curriculum, course)
 );
@@ -51,13 +51,13 @@ CREATE TABLE Validations
     name VARCHAR NOT NULL,
     coefficient FLOAT NOT NULL,
     date DATE NOT NULL,
-    course SERIAL NOT NULL REFERENCES Courses(id)
+    course SERIAL NOT NULL REFERENCES Courses(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Grades
 (
     id SERIAL PRIMARY KEY NOT NULL,
-    student SERIAL NOT NULL REFERENCES Persons(id),
-    validation SERIAL NOT NULL REFERENCES Validations(id),
+    student SERIAL NOT NULL REFERENCES Persons(id) ON DELETE CASCADE,
+    validation SERIAL NOT NULL REFERENCES Validations(id) ON DELETE CASCADE,
     grade FLOAT NOT NULL
 );

@@ -126,10 +126,9 @@ class Model:
         self.cursor.execute("""
         SELECT Courses.id, Courses.name, Persons.lastname, Persons.firstname, CourseCurriculum.ects
         FROM Courses
-        JOIN Curriculums
+        JOIN Curriculums ON Curriculums.id = %s
         JOIN Persons ON Persons.id = Courses.teacher
-        JOIN CourseCurriculum
-        ON CourseCurriculum.course = Courses.id AND CourseCurriculum.curriculum = Curriculums.id
+        JOIN CourseCurriculum ON (CourseCurriculum.course = Courses.id AND CourseCurriculum.curriculum = Curriculums.id)
         """, (idCurriculum))
         return self.cursor.fetchall()
 
@@ -140,8 +139,12 @@ class Model:
     # beware that if a student does not have a grade for a validation
     # or is not registered to a course, he should have 0.
     def averageGradesOfStudentsInCurriculum(self, idCurriculum):
+        # TODO
         self.cursor.execute("""
-        TODO12
+        SELECT lastname, firstname
+        FROM Persons
+        JOIN CurriculumPerson ON CurriculumPerson.student = Persons.id 
+        WHERE CurriculumPerson.curriculum = %s
         """, idCurriculum)
         return self.cursor.fetchall()
 
@@ -187,7 +190,7 @@ class Model:
         SELECT Curriculums.id, Curriculums.name, CourseCurriculum.ects
         FROM CourseCurriculum
         JOIN Curriculums ON Curriculums.id = CourseCurriculum.curriculum
-        WHERE course = %s
+        WHERE CourseCurriculum.course = %s
         """, (idCourse))
         return self.cursor.fetchall()
 
@@ -197,6 +200,7 @@ class Model:
         self.cursor.execute("""
         SELECT id, date, name, coefficient
         FROM Validations
+        WHERE Validations.course = %s
         """, idCourse)
         return self.cursor.fetchall()
 
@@ -225,6 +229,7 @@ class Model:
         JOIN Persons ON Persons.id = Grades.student
         JOIN CurriculumPerson ON CurriculumPerson.student = Grades.student
         JOIN Curriculums ON Curriculums.id = CurriculumPerson.curriculum
+        WHERE Validations.course = %s
         """, idCourse)
         return self.cursor.fetchall()
 
@@ -277,7 +282,7 @@ class Model:
     # Get the name of a person given its ID.
     def getNameOfPerson(self, id):
         self.cursor.execute("""
-        SELECT name FROM Persons WHERE id = %s
+        SELECT firstname || ' ' || lastname FROM Persons WHERE id = %s
         """, id)
         # suppose that there is a solution
         return self.cursor.fetchall()[0][0]
@@ -294,6 +299,7 @@ class Model:
         JOIN CourseCurriculum ON CourseCurriculum.course = Validations.course
         JOIN Curriculums ON CourseCurriculum.curriculum = Curriculums.id
         JOIN Courses ON Courses.id = Validations.course
+        WHERE Persons.id = %s
         """, idStudent)
         return self.cursor.fetchall()
 
@@ -303,6 +309,12 @@ class Model:
     # average grade is computed as before.
     def listCurriculumsOfStudent(self, idStudent):
         self.cursor.execute("""
-        TODO27
-        """, (idStudent, idStudent))
+        SELECT Curriculums.name, sum(Grades.grade * Validations.coefficient) / sum(Validations.coefficient)
+        FROM Grades
+        JOIN Validations ON Grades.validation = Validations.id
+        JOIN CourseCurriculum ON Validations.course = CourseCurriculum.course
+        JOIN Curriculums ON CourseCurriculum.curriculum = Curriculums.id
+        WHERE Grades.student = %s
+        GROUP BY Curriculums.id
+        """, (idStudent))
         return self.cursor.fetchall()
