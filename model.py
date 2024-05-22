@@ -139,7 +139,7 @@ class Model:
     # beware that if a student does not have a grade for a validation
     # or is not registered to a course, he should have 0.
     def averageGradesOfStudentsInCurriculum(self, idCurriculum):
-        # TODO
+        # TODO: Compute the average: aware of coeffs
         self.cursor.execute("""
         SELECT lastname, firstname
         FROM Persons
@@ -308,6 +308,7 @@ class Model:
     # curriculum a given student is registered to, where the
     # average grade is computed as before.
     def listCurriculumsOfStudent(self, idStudent):
+        # TODO: Test if the grade is correctly computed
         self.cursor.execute("""
         SELECT Curriculums.name, sum(Grades.grade * Validations.coefficient) / sum(Validations.coefficient)
         FROM Grades
