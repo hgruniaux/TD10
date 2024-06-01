@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from model import Model
+from model import Model, init_db
 from flask import *
 from forms import *
 from sqlite3 import IntegrityError
@@ -10,6 +10,7 @@ app = Flask(__name__)
 from dotenv import load_dotenv
 
 load_dotenv()
+init_db()
 
 
 @app.route('/')

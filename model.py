@@ -5,9 +5,26 @@ import psycopg2
 import psycopg2.extras
 import os
 
+def get_db_url():
+    return f"dbname='{os.getenv('DB_NAME')}' user='{os.getenv('DB_USER')}' host='psql.eleves.ens.fr' password='{os.getenv('DB_PASSWD')}'"
+
+def init_db():
+    with open("init.sql", "r") as file:
+        sql = file.read()
+
+        connection = psycopg2.connect(get_db_url())
+        connection.autocommit = True
+
+        with connection:
+            with connection.cursor() as cursor:
+                cursor.execute(sql)
+                print("Database initialized!")
+
+        connection.close()
+
 class Model:
     def __init__(self):
-        self.connection = psycopg2.connect(f"dbname='{os.getenv('DB_NAME')}' user='{os.getenv('DB_USER')}' host='psql.eleves.ens.fr' password='{os.getenv('DB_PASSWD')}'")
+        self.connection = psycopg2.connect(get_db_url())
         self.connection.autocommit = True
         self.cursor = self.connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
