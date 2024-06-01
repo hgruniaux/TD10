@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS CourseCurriculum
 (
     course SERIAL NOT NULL REFERENCES Courses(id) ON DELETE CASCADE,
     curriculum SERIAL NOT NULL REFERENCES Curriculums(id) ON DELETE CASCADE,
-    ects INT NOT NULL,
+    ects INT NOT NULL CHECK (ects >= 0),
     PRIMARY KEY (curriculum, course)
 );
 
@@ -52,15 +52,15 @@ CREATE TABLE IF NOT EXISTS Validations
 (
     id SERIAL PRIMARY KEY NOT NULL,
     name VARCHAR NOT NULL,
-    coefficient FLOAT NOT NULL,
+    coefficient FLOAT NOT NULL CHECK (coefficient > 0),
     date DATE NOT NULL,
     course SERIAL NOT NULL REFERENCES Courses(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS Grades
 (
-    id SERIAL PRIMARY KEY NOT NULL,
     student SERIAL NOT NULL REFERENCES Persons(id) ON DELETE CASCADE,
     validation SERIAL NOT NULL REFERENCES Validations(id) ON DELETE CASCADE,
-    grade FLOAT NOT NULL
+    grade FLOAT NOT NULL CHECK (grade >= 0 AND grade <= 20),
+    PRIMARY KEY (student, validation)
 );

@@ -65,7 +65,7 @@ class Model:
         self.cursor.execute("""
         DELETE FROM Persons
         WHERE id=%s
-        """, idPerson)
+        """, (idPerson,))
         self.connection.commit()
 
 ##############################################
@@ -95,7 +95,7 @@ class Model:
         self.cursor.execute("""
         DELETE FROM Curriculums
         WHERE id=%s
-        """, idCurriculum)
+        """, (idCurriculum,))
         self.connection.commit()
 
 ##############################################
@@ -125,7 +125,7 @@ class Model:
         self.cursor.execute("""
         DELETE FROM Courses
         WHERE id=%s
-        """, idCourse)
+        """, (idCourse,))
         self.connection.commit()
 
 
@@ -138,7 +138,7 @@ class Model:
         self.cursor.execute("""
         SELECT name FROM Curriculums
         WHERE id = %s
-        """, id)
+        """, (id,))
         # suppose that there is a solution
         return self.cursor.fetchall()[0][0]
 
@@ -152,7 +152,7 @@ class Model:
         JOIN Curriculums ON Curriculums.id = %s
         JOIN Persons ON Persons.id = Courses.teacher
         JOIN CourseCurriculum ON (CourseCurriculum.course = Courses.id AND CourseCurriculum.curriculum = Curriculums.id)
-        """, (idCurriculum))
+        """, (idCurriculum,))
         return self.cursor.fetchall()
 
     #  !! HARD !!
@@ -174,13 +174,13 @@ class Model:
         )
 
         SELECT lastname, firstname, 
-                            ROUND((sum(COALESCE(CourseGrades.grades, 0) * COALESCE(CourseCurriculum.ects, 0)) / sum(COALESCE(CourseCurriculum.ects, 0)))::numeric, %s)
+                            ROUND((sum(COALESCE(CourseGrades.grades, 0) * COALESCE(CourseCurriculum.ects, 0)) / sum(CourseCurriculum.ects))::numeric, %s)
         FROM Persons
-        JOIN CurriculumPerson ON CurriculumPerson.student = Persons.id
+        JOIN CurriculumPerson ON CurriculumPerson.student = Persons.id AND CurriculumPerson.curriculum = %s
         LEFT JOIN CourseGrades ON Persons.id = CourseGrades.student
         LEFT JOIN CourseCurriculum ON CourseCurriculum.course = CourseGrades.course
         GROUP BY Persons.id
-        """, (idCurriculum, GRADES_DECIMAL_ROUNDING))
+        """, (idCurriculum, GRADES_DECIMAL_ROUNDING, idCurriculum))
         return self.cursor.fetchall()
 
     # Register a person to a curriculum.
@@ -214,7 +214,7 @@ class Model:
         self.cursor.execute("""
         SELECT name FROM Courses
         WHERE id = %s
-        """, id)
+        """, (id,))
         # suppose that there is a solution
         return self.cursor.fetchall()[0][0]
 
@@ -226,7 +226,7 @@ class Model:
         FROM CourseCurriculum
         JOIN Curriculums ON Curriculums.id = CourseCurriculum.curriculum
         WHERE CourseCurriculum.course = %s
-        """, (idCourse))
+        """, (idCourse,))
         return self.cursor.fetchall()
 
     # Returns a list of (id, date, name, coefficent) for the validations
@@ -236,7 +236,7 @@ class Model:
         SELECT id, date, name, coefficient
         FROM Validations
         WHERE Validations.course = %s
-        """, idCourse)
+        """, (idCourse,))
         return self.cursor.fetchall()
 
     # Return a list (id, last name, first name) of persons that are
@@ -248,7 +248,7 @@ class Model:
         JOIN CurriculumPerson on CurriculumPerson.student = Persons.id
         JOIN CourseCurriculum ON CourseCurriculum.curriculum = CurriculumPerson.curriculum
         WHERE CourseCurriculum.course = %s
-        """, idCourse)
+        """, (idCourse,))
         return self.cursor.fetchall()
 
     # Return a list (id, date, curriculum name, student last name,
