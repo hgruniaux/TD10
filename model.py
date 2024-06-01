@@ -5,6 +5,9 @@ import psycopg2
 import psycopg2.extras
 import os
 
+# The number of decimals to return for grades (e.g. 14.32 instead of 14.325622354). Si c'est pas de la doc ça...
+GRADES_DECIMAL_ROUNDING = 2
+
 def get_db_url():
     return f"dbname='{os.getenv('DB_NAME')}' user='{os.getenv('DB_USER')}' host='psql.eleves.ens.fr' password='{os.getenv('DB_PASSWD')}'"
 
@@ -50,7 +53,10 @@ class Model:
     # number of curriculums) corresponding to all persons.
     def listPersons(self):
         self.cursor.execute("""
-        SELECT * FROM Persons
+        SELECT Persons.id, lastname, firstname, address, phone, count(CurriculumPerson.student) 
+        FROM Persons
+        LEFT JOIN CurriculumPerson ON CurriculumPerson.student = Persons.id
+        GROUP BY Persons.id, CurriculumPerson.student
         """)
         return self.cursor.fetchall()
 
@@ -156,13 +162,25 @@ class Model:
     # beware that if a student does not have a grade for a validation
     # or is not registered to a course, he should have 0.
     def averageGradesOfStudentsInCurriculum(self, idCurriculum):
-        # TODO: Compute the average: aware of coeffs
         self.cursor.execute("""
-        SELECT lastname, firstname
+        WITH CourseGrades AS (
+            SELECT CurriculumPerson.student as student, Validations.course as course, 
+                            sum(Grades.grade * Validations.coefficient) / sum(Validations.coefficient) AS grades
+            FROM Validations
+            JOIN CourseCurriculum ON CourseCurriculum.course = Validations.course AND CourseCurriculum.curriculum = %s
+            JOIN CurriculumPerson ON CurriculumPerson.curriculum = CourseCurriculum.curriculum
+            LEFT JOIN Grades ON Grades.validation = Validations.id AND Grades.student = CurriculumPerson.student
+            GROUP BY CurriculumPerson.student, Validations.course
+        )
+
+        SELECT lastname, firstname, 
+                            ROUND((sum(COALESCE(CourseGrades.grades, 0) * COALESCE(CourseCurriculum.ects, 0)) / sum(COALESCE(CourseCurriculum.ects, 0)))::numeric, %s)
         FROM Persons
-        JOIN CurriculumPerson ON CurriculumPerson.student = Persons.id 
-        WHERE CurriculumPerson.curriculum = %s
-        """, idCurriculum)
+        JOIN CurriculumPerson ON CurriculumPerson.student = Persons.id
+        LEFT JOIN CourseGrades ON Persons.id = CourseGrades.student
+        LEFT JOIN CourseCurriculum ON CourseCurriculum.course = CourseGrades.course
+        GROUP BY Persons.id
+        """, (idCurriculum, GRADES_DECIMAL_ROUNDING))
         return self.cursor.fetchall()
 
     # Register a person to a curriculum.
@@ -239,15 +257,16 @@ class Model:
     # sorted by decreasing date of validation.
     def listGradesOfCourse(self, idCourse):
         self.cursor.execute("""
-        SELECT Validations.id, Validations.date, Curriculums.name, Persons.lastname, Persons.firstname, Validations.name, Grades.grade, Validations.coefficient
+        SELECT Validations.id, Validations.date, Curriculums.name, Persons.lastname, Persons.firstname, Validations.name, ROUND(Grades.grade::numeric, %s), Validations.coefficient
         FROM Validations
         JOIN Courses ON Validations.course = Courses.id
         JOIN Grades ON Grades.validation = Validations.id
         JOIN Persons ON Persons.id = Grades.student
         JOIN CurriculumPerson ON CurriculumPerson.student = Grades.student
-        JOIN Curriculums ON Curriculums.id = CurriculumPerson.curriculum
+        JOIN CourseCurriculum ON CourseCurriculum.course = Courses.id
+        JOIN Curriculums ON Curriculums.id = CurriculumPerson.curriculum AND Curriculums.id = CourseCurriculum.curriculum
         WHERE Validations.course = %s
-        """, idCourse)
+        """, (GRADES_DECIMAL_ROUNDING, idCourse))
         return self.cursor.fetchall()
 
     # Add a validation to a given course.
@@ -274,11 +293,12 @@ class Model:
    # a given validation.
     def listGradesOfValidation(self, idValidation):
         self.cursor.execute("""
-        SELECT Grades.grade, Persons.lastname, Persons.firstname
+        SELECT ROUND(Grades.grade::numeric, %s), Persons.lastname, Persons.firstname
         FROM Grades
         JOIN Persons ON Grades.student = Persons.id
         WHERE Grades.validation = %s
-        """, idValidation)
+        ORDER BY Grades.grade DESC
+        """, (GRADES_DECIMAL_ROUNDING, idValidation))
         return self.cursor.fetchall()
 
     # Get the complete name of a validation given its ID. The
@@ -287,8 +307,11 @@ class Model:
     # course.
     def getNameOfValidation(self, id):
         self.cursor.execute("""
-        SELECT name FROM Validations WHERE id = %s
-        """, id)
+        SELECT Courses.name || ' - ' || Validations.name 
+        FROM Validations
+        JOIN Courses ON Validations.course = Courses.id
+        WHERE Validations.id = %s
+        """, (id,))
         # suppose that there is a solution
         return self.cursor.fetchall()[0][0]
 
@@ -300,7 +323,7 @@ class Model:
     def getNameOfPerson(self, id):
         self.cursor.execute("""
         SELECT firstname || ' ' || lastname FROM Persons WHERE id = %s
-        """, id)
+        """, (id,))
         # suppose that there is a solution
         return self.cursor.fetchall()[0][0]
 
@@ -309,7 +332,7 @@ class Model:
     # by decreasing date of validation.
     def listValidationsOfStudent(self, idStudent):
         self.cursor.execute("""
-        SELECT Validations.id, Validations.date, Curriculums.name, Courses.name, Validations.name, Grades.grade
+        SELECT Validations.id, Validations.date, Curriculums.name, Courses.name, Validations.name, ROUND(Grades.grade::numeric, %s)
         FROM Persons
         JOIN Grades ON Grades.student = Persons.id
         JOIN Validations ON Validations.id = Grades.validation
@@ -317,7 +340,7 @@ class Model:
         JOIN Curriculums ON CourseCurriculum.curriculum = Curriculums.id
         JOIN Courses ON Courses.id = Validations.course
         WHERE Persons.id = %s
-        """, idStudent)
+        """, (GRADES_DECIMAL_ROUNDING, idStudent))
         return self.cursor.fetchall()
 
     # !!! HARD !!!
@@ -325,14 +348,21 @@ class Model:
     # curriculum a given student is registered to, where the
     # average grade is computed as before.
     def listCurriculumsOfStudent(self, idStudent):
-        # TODO: Test if the grade is correctly computed
         self.cursor.execute("""
-        SELECT Curriculums.name, sum(Grades.grade * Validations.coefficient) / sum(Validations.coefficient)
-        FROM Grades
-        JOIN Validations ON Grades.validation = Validations.id
-        JOIN CourseCurriculum ON Validations.course = CourseCurriculum.course
+        WITH CourseGrades AS (
+            SELECT Validations.course as course, (sum(Grades.grade * Validations.coefficient) / sum(Validations.coefficient)) as grades
+            FROM Validations
+            JOIN CourseCurriculum ON CourseCurriculum.course = Validations.course
+            JOIN CurriculumPerson ON CurriculumPerson.student = %s AND CurriculumPerson.curriculum = CourseCurriculum.curriculum
+            LEFT JOIN Grades ON Grades.student = CurriculumPerson.student AND Grades.validation = Validations.id
+            GROUP BY Validations.course
+        )
+
+        SELECT Curriculums.name, 
+                            ROUND((sum(COALESCE(CourseGrades.grades,0) * COALESCE(CourseCurriculum.ects,0)) / sum(COALESCE(CourseCurriculum.ects,0)))::numeric, %s)
+        FROM CourseGrades
+        JOIN CourseCurriculum ON CourseCurriculum.course = CourseGrades.course
         JOIN Curriculums ON CourseCurriculum.curriculum = Curriculums.id
-        WHERE Grades.student = %s
-        GROUP BY Curriculums.id
-        """, (idStudent))
+        GROUP BY Curriculums.name
+        """, (idStudent, GRADES_DECIMAL_ROUNDING))
         return self.cursor.fetchall()
