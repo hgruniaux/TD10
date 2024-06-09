@@ -15,6 +15,7 @@ DB_NAME=/* your database name */
 DB_USER=/* your user name for the database */
 DB_PASSWD=/* you password for the database */
 ```
+Database `DB_NAME` must either already exist or be created manually with `psql`.
 
 Finally, you can execute `python3 run.py`. It will correctly initialize the database by executing the code in `init.sql` at startup.
 
